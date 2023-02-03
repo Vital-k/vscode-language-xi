@@ -3,7 +3,7 @@ const fs = require('fs');
 const tools = require('./tools.js');
 
 
-module.exports = function(vscode) {
+module.exports = function (vscode) {
 
 
   class LinkProvider {
@@ -25,12 +25,11 @@ module.exports = function(vscode) {
       if (name.startsWith('#')) {
         const anchor = name.slice(1).trim();
         if (anchor.length) {
-          return vscode.Uri.parse(`command:extension.xi.open?${
-            encodeURIComponent(JSON.stringify({
-              //  Without file it's not header anchor, but a wikiword.
-              anchor,
-            }))
-          }`);
+          return vscode.Uri.parse(`command:extension.xi.open?${encodeURIComponent(JSON.stringify({
+            //  Without file it's not header anchor, but a wikiword.
+            anchor,
+          }))
+            }`);
         }
         else {
           //  [#] or #[] is meaningless
@@ -46,22 +45,33 @@ module.exports = function(vscode) {
         //  Always use lowercase since different wikiwords can have
         //  different writing depending on context, ex capitalized at
         //  the sentence start.
-        const fileName = `${link.replace(/ /g, '_')}.xi`.toLowerCase();
+        let fileName = `${link.replace(/ /g, '_')}`.toLowerCase();
+        const ext = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length).toLowerCase();
+
+        if (ext === "png" || ext === "jpg" || ext === "pdf") {
+          const dir = path.dirname(doc.fileName);
+          const file = path.join(dir, fileName);
+          return vscode.Uri.file(file);
+        }
+        else {
+          fileName = fileName + ".xi";
+        }
+
+        //const fileName = `${link.replace(/ /g, '_')}.xi`.toLowerCase();
         const dir = path.dirname(doc.fileName);
         const file = path.join(dir, fileName);
+
         if (anchor) {
-          return vscode.Uri.parse(`command:extension.xi.open?${
-            encodeURIComponent(JSON.stringify({file, anchor}))
-          }`);
+          return vscode.Uri.parse(`command:extension.xi.open?${encodeURIComponent(JSON.stringify({ file, anchor }))
+            }`);
         }
         else {
           try {
             fs.statSync(file);
             // Open existing file reusing current editor tab if possible
-            return vscode.Uri.parse(`command:extension.xi.open?${
-              encodeURIComponent(JSON.stringify({file}))
-            }`);
-          } catch(e) {
+            return vscode.Uri.parse(`command:extension.xi.open?${encodeURIComponent(JSON.stringify({ file }))
+              }`);
+          } catch (e) {
             //  If no anchor like [foo#bar] or foo#bar[] is specified, use
             //  normal file //  uri so VSCode will ask to create a file if
             //  it does not exists. This will use a new editor tab.
@@ -87,7 +97,7 @@ module.exports = function(vscode) {
         const endIdx = match.index + match[0].length - 1;
         let lineBeginIdx = match.index;
         while (lineBeginIdx > 0 && text[lineBeginIdx - 1] !== "\n") {
-          lineBeginIdx --;
+          lineBeginIdx--;
         }
         const name = text.substr(beginIdx, endIdx - beginIdx);
         //  String from line start to link match.
